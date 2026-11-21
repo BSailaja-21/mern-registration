@@ -1,13 +1,18 @@
+
 import { useState } from "react";
 import axios from "axios";
 import "./App.css";
 
 function App() {
+  const [isLogin, setIsLogin] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: ""
   });
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const handleChange = (e) => {
     setFormData({
@@ -20,12 +25,28 @@ function App() {
     e.preventDefault();
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        formData
-      );
+      if (isLogin) {
+        const response = await axios.post(
+          `${API_URL}/api/auth/login`,
+          {
+            email: formData.email,
+            password: formData.password
+          }
+        );
 
-      alert(response.data.message);
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        alert("Login successful!");
+
+      } else {
+        const response = await axios.post(
+          `${API_URL}/api/auth/register`,
+          formData
+        );
+
+        alert(response.data.message);
+      }
 
       setFormData({
         name: "",
@@ -34,23 +55,27 @@ function App() {
       });
 
     } catch (error) {
-      alert(error.response?.data?.message || "Registration failed");
+      alert(
+        error.response?.data?.message || "Something went wrong"
+      );
     }
   };
 
   return (
     <div className="container">
       <form onSubmit={handleSubmit}>
-        <h2>User Registration</h2>
+        <h2>{isLogin ? "User Login" : "User Registration"}</h2>
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Enter Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+        {!isLogin && (
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter Name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        )}
 
         <input
           type="email"
@@ -70,7 +95,33 @@ function App() {
           required
         />
 
-        <button type="submit">Register</button>
+        <button type="submit">
+          {isLogin ? "Login" : "Register"}
+        </button>
+
+        <p>
+          {isLogin
+            ? "Don't have an account?"
+            : "Already have an account?"}
+
+          <span
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setFormData({
+                name: "",
+                email: "",
+                password: ""
+              });
+            }}
+            style={{
+              color: "blue",
+              cursor: "pointer",
+              marginLeft: "5px"
+            }}
+          >
+            {isLogin ? "Register" : "Login"}
+          </span>
+        </p>
       </form>
     </div>
   );
